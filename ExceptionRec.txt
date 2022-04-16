@@ -1,0 +1,18 @@
+问题1 :Undefined symbols for architecture arm64
+
+原因： mac 安装的 ffmepg 不包含 arm64 架构类型，由于更换到m1芯片的电脑，电脑上的数据都是老电脑（intel 芯片）通过系统工具迁移过来的，
+老电脑上的安装的brew 以及ffmpeg 都是x86_64 架构的
+
+解决：
+
+ss科学上网， 配置 https.proxy 代理， git config --global https.proxy https://127.0.0.1:8087
+
+卸载brew ： /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"
+重装 brew ：/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+重装ffmpeg ：brew install ffmpeg
+
+
+
+
+
+
