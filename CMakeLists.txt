@@ -10,7 +10,7 @@ include_directories(${FFMPEG_DIR}/include/)
 # 动态链接库或静态链接库的搜索路径
 link_directories(${FFMPEG_DIR}/lib/)
 
-add_executable(FFMpegPro main.cpp)
+add_executable(FFMpegPro main.cpp MediaDeMuxerCore.cpp MediaDeMuxerCore.h)
 
 #链接库
 target_link_libraries(FFMpegPro
@@ -19,6 +19,6 @@ target_link_libraries(FFMpegPro
         avfilter
         avformat
         avutil
-        swresample
-        swscale
+        swresample #该模块可用于音频重采样，可以对数字音频进行声道数、数据格式、采样率等多种基本信息的转换
+        swscale # 该模块是将图像进行格式转换的模块，比如，可以将YUV的数据转换为RGB的数据。
         )
