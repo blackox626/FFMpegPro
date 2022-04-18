@@ -10,7 +10,7 @@ include_directories(${FFMPEG_DIR}/include/)
 # 动态链接库或静态链接库的搜索路径
 link_directories(${FFMPEG_DIR}/lib/)
 
-add_executable(FFMpegPro main.cpp MediaDeMuxerCore.cpp MediaDeMuxerCore.h)
+add_executable(FFMpegPro main.cpp MediaDeMuxerCore.cpp MediaDeMuxerCore.h VideoDecoder.cpp VideoDecoder.h)
 
 #链接库
 target_link_libraries(FFMpegPro
