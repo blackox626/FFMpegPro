@@ -29,18 +29,18 @@ void AudioDecoder::decode_audio(std::string media_path, std::string pcm_path) {
 
         // 初始化解码器相关
         const AVCodec *audio_codec = avcodec_find_decoder(avFormatContext->streams[audio_index]->codecpar->codec_id);
-        if(nullptr == audio_codec){
-            std::cout << "没找到对应的解码器:"  << std::endl;
+        if (nullptr == audio_codec) {
+            std::cout << "没找到对应的解码器:" << std::endl;
             return;
         }
         AVCodecContext *codec_ctx = avcodec_alloc_context3(audio_codec);
         // 如果不加这个可能会 报错Invalid data found when processing input
-        avcodec_parameters_to_context(codec_ctx,avFormatContext->streams[audio_index]->codecpar);
+        avcodec_parameters_to_context(codec_ctx, avFormatContext->streams[audio_index]->codecpar);
 
         // 打开解码器
         int ret = avcodec_open2(codec_ctx, audio_codec, NULL);
         if (ret < 0) {
-            std::cout << "解码器打开失败:"  << std::endl;
+            std::cout << "解码器打开失败:" << std::endl;
             return;
         }
         // 初始化包和帧数据结构
@@ -50,9 +50,9 @@ void AudioDecoder::decode_audio(std::string media_path, std::string pcm_path) {
         AVFrame *frame = av_frame_alloc();
 
 
-        std::cout << "采样格式sample_fmt:"  << codec_ctx->sample_fmt << std::endl;
-        std::cout << "AV_SAMPLE_FMT_U8:"  << AV_SAMPLE_FMT_U8 << std::endl;
-        std::cout << "采样率sample_rate:"  << codec_ctx->sample_rate << std::endl;
+        std::cout << "采样格式sample_fmt:" << codec_ctx->sample_fmt << std::endl;
+        std::cout << "AV_SAMPLE_FMT_U8:" << AV_SAMPLE_FMT_U8 << std::endl;
+        std::cout << "采样率sample_rate:" << codec_ctx->sample_rate << std::endl;
 
         FILE *audio_pcm = fopen(pcm_path.c_str(), "wb");
         while (true) {
@@ -60,14 +60,14 @@ void AudioDecoder::decode_audio(std::string media_path, std::string pcm_path) {
             if (ret < 0) {
                 std::cout << "音频读取完毕" << std::endl;
                 break;
-            } else if(audio_index == avPacket->stream_index){ // 过滤音频
+            } else if (audio_index == avPacket->stream_index) { // 过滤音频
                 ret = avcodec_send_packet(codec_ctx, avPacket);
-                if(ret == AVERROR(EAGAIN)) {
+                if (ret == AVERROR(EAGAIN)) {
                     std::cout << "发送解码EAGAIN：" << std::endl;
-                } else if(ret < 0) {
+                } else if (ret < 0) {
                     char error[1024];
-                    av_strerror(ret,error,1024);
-                    std::cout << "发送解码失败："  << error << std::endl;
+                    av_strerror(ret, error, 1024);
+                    std::cout << "发送解码失败：" << error << std::endl;
                     return;
                 }
                 while (true) {
@@ -98,6 +98,11 @@ void AudioDecoder::decode_audio(std::string media_path, std::string pcm_path) {
                         -i 表示输入文件，这里就是 pcm 文件
                      *
                      */
+
+                    /**
+                     * 需要注意的一点是planar仅仅是FFmpeg内部使用的储存模式，我们实际中所使用的音频都是packed模式的，
+                     * 也就是说我们使用FFmpeg解码出音频PCM数据后，如果需要写入到输出文件，应该将其转为packed模式的输出。
+                     */
                     const char *fmt_name = av_get_sample_fmt_name(codec_ctx->sample_fmt);
                     AVSampleFormat pack_fmt = av_get_packed_sample_fmt(codec_ctx->sample_fmt);
                     std::cout << "fmt_name:" << fmt_name << std::endl;
@@ -116,7 +121,7 @@ void AudioDecoder::decode_audio(std::string media_path, std::string pcm_path) {
                         fwrite(frame->data[0], 1, frame->linesize[0], audio_pcm);
                     }
                 }
-            } else{
+            } else {
                 av_packet_unref(avPacket); // 减少引用计数
             }
         }
