@@ -1,5 +1,6 @@
 #include <iostream>
 #include "MediaDeMuxerCore.h"
+#include "AudioDecoder.h"
 
 //在C++中引用C语言中的函数和变量，在包含C语言头文件（假设为cExample.h）时，需进行下列处理：
 //extern "C"
@@ -20,13 +21,20 @@ int main() {
 //    std::cout << "av_version_info:" << av_version_info() << std::endl;
 //    std::cout << "av_version_info:" << avcodec_configuration() << std::endl;
 
-    MediaDeMuxerCore *deMuxerCore = new MediaDeMuxerCore();
-    std::string media_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/media.mp4";
-    std::string out_video_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/video.h264";
-    deMuxerCore->de_muxer_video(media_path,out_video_path);
 
-    std::string out_audio_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/audio.acc";
-    deMuxerCore->de_muxer_audio(media_path,out_audio_path);
+    std::string media_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/media.mp4";
+
+//    MediaDeMuxerCore *deMuxerCore = new MediaDeMuxerCore();
+
+//    std::string out_video_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/video.h264";
+//    deMuxerCore->de_muxer_video(media_path,out_video_path);
+//
+//    std::string out_audio_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/audio.acc";
+//    deMuxerCore->de_muxer_audio(media_path,out_audio_path);
+
+    AudioDecoder *audioDecoder = new AudioDecoder();
+    std::string pcm_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/audio.pcm";
+    audioDecoder->decode_audio(media_path,pcm_path);
 
     return 0;
 }
