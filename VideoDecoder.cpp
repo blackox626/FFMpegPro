@@ -75,7 +75,7 @@ void VideoDecoder::decode_video(std::string media_path, std::string yuv_path) {
                     // 播放 ffplay -i YUV文件路径 -pixel_format yuv420p -framerate 25 -video_size 640x480
                     // frame->linesize[1]  对齐的问题
                     // 正确写法  linesize[]代表每行的字节数量，所以每行的偏移是linesize[]
-                    // 成员data是个指针数组，每个成员所指向的就是yuv三个分量的实体数据了，成员linesize是指对应于每一行的大小，为什么需要这个变量，是因为在YUV格式和RGB格式时，每行的大小不一定等于图像的宽度
+                    // 成员data是个指针数组，每个成员所指向的就是yuv三个分量的实体数据了，成员linesize是指对应于每一行的大小，为什么需要这个变量，是因为在YUV格式和RGB格式时，每行的大小不一定等于图像的宽度（字节对齐）
                     //
 
                     //ptr -- 这是指向要被写入的元素数组的指针。
