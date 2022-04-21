@@ -78,8 +78,13 @@ void AudioDecoder::decode_audio(std::string media_path, std::string pcm_path) {
                         std::cout << "音频解码失败：" << std::endl;
                         return;
                     }
-                    // 每帧音频数据量的大小
+                    // 每个采样数据量的大小
                     int data_size = av_get_bytes_per_sample(codec_ctx->sample_fmt);
+                    std::cout << "bytes_per_sample:" << data_size << std::endl;
+
+                    // 每帧采样数
+                    int nb_samples = frame->nb_samples;
+                    std::cout << "nb_samples:" << nb_samples << std::endl;
                     /**
                      * P表示Planar（平面），其数据格式排列方式为 :
                        LLLLLLRRRRRRLLLLLLRRRRRRLLLLLLRRRRRRL...（每个LLLLLLRRRRRR为一个音频帧）
