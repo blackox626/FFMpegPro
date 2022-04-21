@@ -64,6 +64,13 @@ void VideoDecoder::decode_video(std::string media_path, std::string yuv_path) {
                 } else {
                     std::cout << "写入YUV文件avFrame->linesize[0]：" << avFrame->linesize[0] << "avFrame->width:"
                               << avFrame->width << std::endl;
+
+                    std::cout << "写入YUV文件avFrame->linesize[1]：" << avFrame->linesize[1] << "avFrame->width:"
+                              << avFrame->width << std::endl;
+
+                    std::cout << "写入YUV文件avFrame->linesize[2]：" << avFrame->linesize[2] << "avFrame->width:"
+                              << avFrame->width << std::endl;
+
                     std::cout << "avFrame->format：" << avFrame->format << std::endl;
                     // 播放 ffplay -i YUV文件路径 -pixel_format yuv420p -framerate 25 -video_size 640x480
                     // frame->linesize[1]  对齐的问题
