@@ -101,6 +101,12 @@ void VideoEncoder::encode_yuv_to_h264(const char *yuv_path, const char *h264_pat
                 // 读取y
                 read_size += fread(avFrame->data[0] + i * avFrame->linesize[0], 1, avFrame->width, input_media);
             }
+
+            /*size_t   fread(   void   *buffer,   size_t   size,   size_t   count,   FILE   *stream   )
+            buffer   是读取的数据存放的内存的指针（可以是数组，也可以是新开辟的空间，buffer就是一个索引）
+            size       是每次读取的字节数
+            count     是读取次数
+            strean   是要读取的文件的指针*/
             // 读取u和v
             for (int i = 0; i < avFrame->height / 2; i++) {
                 read_size += fread(avFrame->data[1] + i * avFrame->linesize[1], 1, avFrame->width / 2, input_media);
