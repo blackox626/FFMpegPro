@@ -38,6 +38,7 @@ void encode_video(AVCodecContext *avCodecContext, AVFrame *avFrame, AVPacket *av
     }
 }
 
+/// 读取yuv 数据 -> avframe  经过codec 编码成 avpacket  直接写到 h264文件
 void VideoEncoder::encode_yuv_to_h264(const char *yuv_path, const char *h264_path) {
     const AVCodec *avCodec = avcodec_find_encoder(AV_CODEC_ID_H264);
     AVCodecContext *avCodecContext = avcodec_alloc_context3(avCodec);
@@ -86,6 +87,13 @@ void VideoEncoder::encode_yuv_to_h264(const char *yuv_path, const char *h264_pat
         int64_t read_size = 0;
         // 这里可以自行了解下ffmpeg字节对齐的问题
         // 内存对齐 提高效率
+
+        /**
+         * YUV 数据在内存中存储时，每行像素的数据后面可能还有填充字节
+         * 这主要是因为有些系统/环境/操作对内存的字节对齐有要求，比如 64 字节对齐，那么宽度为 720 像素的图像，一行就不满足 64 对齐的要求，那就要填充到 768 像素。
+         * 存储一行像素所需的字节数，就叫 stride，也叫 pitch，也叫间距
+         * 如果图像的宽度是内存对齐长度的整数倍，那么间距就会等于宽度
+         */
         if (avFrame->width == avFrame->linesize[0]) {
             std::cout << "不存在padding字节" << std::endl;
             // 读取y
