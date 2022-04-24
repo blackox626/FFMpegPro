@@ -14,7 +14,7 @@ extern "C" {
 }
 
 #ifndef AUDIO_TARGET_SAMPLE
-#define AUDIO_TARGET_SAMPLE 48000
+#define AUDIO_TARGET_SAMPLE 44100
 #endif
 
 class AudioResample {
@@ -135,7 +135,7 @@ private:
         if (ret < 0) {
             std::cout << "重采样失败" << std::endl;
         } else {
-            // 每帧音频数据量的大小
+            // 每个音频采样数据的字节
             int data_size = av_get_bytes_per_sample(static_cast<AVSampleFormat>(out_frame->format));
 
             std::cout << "重采样成功：" << ret << "----dst_nb_samples:" << dst_nb_samples << "---data_size:" << data_size
@@ -164,3 +164,5 @@ private:
     }
 
 };
+
+//https://blog.csdn.net/shulianghan/article/details/104871223  音频延迟的理解
