@@ -105,6 +105,11 @@ void AudioDecoder::decode_audio(std::string media_path, std::string pcm_path) {
                      */
 
                     /**
+                     * 大端模式，是指数据的高字节保存在内存的低地址中，而数据的低字节保存在内存的高地址中
+                     * 小端模式，是指数据的高字节保存在内存的高地址中，而数据的低字节保存在内存的低地址中
+                     */
+
+                    /**
                      * 需要注意的一点是planar仅仅是FFmpeg内部使用的储存模式，我们实际中所使用的音频都是packed模式的，
                      * 也就是说我们使用FFmpeg解码出音频PCM数据后，如果需要写入到输出文件，应该将其转为packed模式的输出。
                      */
