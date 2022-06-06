@@ -176,7 +176,7 @@ void FFMpegSimplePlayer::play(const char *filepath) {
         //Wait
         SDL_WaitEvent(&event);
         if (event.type == SFM_REFRESH_EVENT) {
-            while (1) {
+            while (true) {
                 if (av_read_frame(pFormatCtx, packet) < 0)
                     thread_exit = 1;
 
