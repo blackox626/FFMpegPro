@@ -5,6 +5,7 @@
 
 #include "AudioResample.cpp"
 #include "Mp3ToAAC.cpp"
+#include "FFMpegSimplePlayer.h"
 
 //在C++中引用C语言中的函数和变量，在包含C语言头文件（假设为cExample.h）时，需进行下列处理：
 //extern "C"
@@ -44,17 +45,20 @@ int main() {
 //    std::string pcm_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/audio.pcm";
 //    audioDecoder->decode_audio(media_path,pcm_path);
 
-    /// 局部变量 栈上分配空间 函数结束 自动析构 释放内存
+//    / 局部变量 栈上分配空间 函数结束 自动析构 释放内存
 //    AudioResample audioResample;
 //    const char *_media_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/media.mp4";
 //    const char *resample_pcm_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/audio_resample.pcm";
 //    audioResample.decode_audio_resample(_media_path,resample_pcm_path);
+//
+//
+//    Mp3ToAAC mp3ToAac;
+//    const char *mp3_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/01.mp3";
+//    const char *aac_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/01.aac";
+//    mp3ToAac.mp3_to_aac(mp3_path,aac_path);
 
-
-    Mp3ToAAC mp3ToAac;
-    const char *mp3_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/01.mp3";
-    const char *aac_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/01.aac";
-    mp3ToAac.mp3_to_aac(mp3_path,aac_path);
+    auto *ffmpegPlayer = new FFMpegSimplePlayer();
+    ffmpegPlayer->play("/Users/blackox626/CLionProjects/FFMpegPro/resource/media.mp4");
 
     return 0;
 }
