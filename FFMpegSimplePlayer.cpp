@@ -165,7 +165,8 @@ void FFMpegSimplePlayer::play(const char *filepath) {
     sdlRect.w = screen_w;
     sdlRect.h = screen_h;
 
-    packet = (AVPacket *) av_malloc(sizeof(AVPacket));
+//    packet = (AVPacket *) av_malloc(sizeof(AVPacket));
+    packet = av_packet_alloc();
 
     video_tid = SDL_CreateThread(sfp_refresh_thread, NULL, NULL);
     //------------SDL End------------

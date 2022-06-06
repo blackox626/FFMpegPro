@@ -57,8 +57,8 @@ int main() {
 //    const char *aac_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/01.aac";
 //    mp3ToAac.mp3_to_aac(mp3_path,aac_path);
 
-    auto *ffmpegPlayer = new FFMpegSimplePlayer();
-    ffmpegPlayer->play("/Users/blackox626/CLionProjects/FFMpegPro/resource/media.mp4");
+    FFMpegSimplePlayer ffmpegPlayer ;
+    ffmpegPlayer.play("/Users/blackox626/CLionProjects/FFMpegPro/resource/media.mp4");
 
     return 0;
 }
