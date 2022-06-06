@@ -198,7 +198,6 @@ void FFMpegSimplePlayer::play(const char *filepath) {
                     std::cout << "视频解码失败：" << std::endl;
                     return;
                 } else {
-                    //if (got_picture) {
                     sws_scale(img_convert_ctx, (const unsigned char *const *) pFrame->data, pFrame->linesize, 0,
                               pCodecCtx->height, pFrameYUV->data, pFrameYUV->linesize);
                     //SDL---------------------------
@@ -208,7 +207,6 @@ void FFMpegSimplePlayer::play(const char *filepath) {
                     SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
                     SDL_RenderPresent(sdlRenderer);
                     //SDL End-----------------------
-                    //}
                 }
             }
 
