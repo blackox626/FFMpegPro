@@ -70,9 +70,9 @@ void audio_callback(void *userdata, Uint8 *stream, int len) {
     auto *aCodecCtx = (AVCodecContext *) userdata;
     int len1, audio_data_size;
 
-    uint8_t audio_buf[8192];
-    unsigned int audio_buf_size = 0;
-    unsigned int audio_buf_index = 0;
+    static uint8_t audio_buf[8192];
+    static unsigned int audio_buf_size = 0;
+    static unsigned int audio_buf_index = 0;
 
     /*   len是由SDL传入的SDL缓冲区的大小，如果这个缓冲未满，我们就一直往里填充数据 */
     while (len > 0) {
@@ -86,7 +86,7 @@ void audio_callback(void *userdata, Uint8 *stream, int len) {
             /* audio_data_size < 0 标示没能解码出数据，我们默认播放静音 */
             if (audio_data_size < 0) {
                 /* silence */
-                audio_buf_size = 1024;
+                audio_buf_size = 8192;
                 /* 清零，静音 */
                 memset(audio_buf, 0, audio_buf_size);
             } else {
@@ -130,7 +130,9 @@ SDL_Event event;
 
 struct SwsContext *img_convert_ctx;
 
-FILE *audio_pcm;
+SwrContext *au_convert_ctx;
+
+//FILE *audio_pcm;
 
 //初始化队列
 void packet_queue_init(PacketQueue *q) {
@@ -198,7 +200,7 @@ static int packet_queue_get(PacketQueue *q, AVPacket *pkt, int block) {
 
 //解码流数据到
 int audio_decode_frame(AVCodecContext *codecCtx, uint8_t *audio_buf, int buf_size) {
-    AVPacket pkt;
+    static AVPacket pkt;
     uint8_t *audio_pkt_data = NULL;
     int audio_pkt_size = 0;
     int len1, _data_size;
@@ -208,9 +210,10 @@ int audio_decode_frame(AVCodecContext *codecCtx, uint8_t *audio_buf, int buf_siz
         {
             return -1;
         }
-        audio_pkt_data = pkt.data;
+//        audio_pkt_data = pkt.data;
         audio_pkt_size = pkt.size;
-        while (audio_pkt_size > 0) {
+        std::cout << "audio_pkt_size：" << audio_pkt_size << std::endl;
+//        while (audio_pkt_size > 0) {
             int ret = avcodec_send_packet(aCodecCtx, &pkt);
 
             if (ret == AVERROR(EAGAIN)) {
@@ -231,11 +234,11 @@ int audio_decode_frame(AVCodecContext *codecCtx, uint8_t *audio_buf, int buf_siz
                 }
                 // 每个采样数据量的大小
                 int data_size = av_get_bytes_per_sample(aCodecCtx->sample_fmt);
-                std::cout << "bytes_per_sample:" << data_size << std::endl;
-
-                // 每帧采样数
-                int nb_samples = aFrame->nb_samples;
-                std::cout << "nb_samples:" << nb_samples << std::endl;
+//                std::cout << "bytes_per_sample:" << data_size << std::endl;
+//
+//                // 每帧采样数
+//                int nb_samples = aFrame->nb_samples;
+//                std::cout << "nb_samples:" << nb_samples << std::endl;
                 /**
                  * P表示Planar（平面），其数据格式排列方式为 :
                    LLLLLLRRRRRRLLLLLLRRRRRRLLLLLLRRRRRRL...（每个LLLLLLRRRRRR为一个音频帧）
@@ -264,11 +267,11 @@ int audio_decode_frame(AVCodecContext *codecCtx, uint8_t *audio_buf, int buf_siz
                  * 需要注意的一点是planar仅仅是FFmpeg内部使用的储存模式，我们实际中所使用的音频都是packed模式的，
                  * 也就是说我们使用FFmpeg解码出音频PCM数据后，如果需要写入到输出文件，应该将其转为packed模式的输出。
                  */
-                const char *fmt_name = av_get_sample_fmt_name(aCodecCtx->sample_fmt);
-                AVSampleFormat pack_fmt = av_get_packed_sample_fmt(aCodecCtx->sample_fmt);
-                std::cout << "fmt_name:" << fmt_name << std::endl;
-                std::cout << "pack_fmt:" << pack_fmt << std::endl;
-                std::cout << "frame->format:" << aFrame->format << std::endl;
+//                const char *fmt_name = av_get_sample_fmt_name(aCodecCtx->sample_fmt);
+//                AVSampleFormat pack_fmt = av_get_packed_sample_fmt(aCodecCtx->sample_fmt);
+//                std::cout << "fmt_name:" << fmt_name << std::endl;
+//                std::cout << "pack_fmt:" << pack_fmt << std::endl;
+//                std::cout << "frame->format:" << aFrame->format << std::endl;
 
 //                float *sample_buffer = (float *) malloc(aFrame->nb_samples * 2 * 4);
 //                memset(sample_buffer, 0, aFrame->nb_samples * 2 * 4);
@@ -289,9 +292,14 @@ int audio_decode_frame(AVCodecContext *codecCtx, uint8_t *audio_buf, int buf_siz
 //                    fwrite(frame->data[0], 1, frame->linesize[0], audio_pcm);
                 }
 
-//                memcpy(audio_buf, aFrame->data, aFrame->nb_samples * 2 * 4);
+//                auto *_out_buffer = (uint8_t *) av_malloc(AVCODEC_MAX_AUDIO_FRAME_SIZE * 2);
+//
+//                swr_convert(au_convert_ctx, &_out_buffer, AVCODEC_MAX_AUDIO_FRAME_SIZE,
+//                            const_cast<const uint8_t **>(aFrame->data), aFrame->nb_samples);
+//
+//                memcpy(audio_buf, _out_buffer, aFrame->nb_samples * 2 * 4);
                 _data_size = aFrame->nb_samples * 2 * 4;
-                audio_buf -= _data_size;
+//                audio_buf -= _data_size;
 //                fwrite(audio_buf, 1, _data_size, audio_pcm);
 
                 return _data_size;
@@ -346,7 +354,7 @@ int audio_decode_frame(AVCodecContext *codecCtx, uint8_t *audio_buf, int buf_siz
 //            data_size = audioFrame->nb_samples * 4;
 
 
-        }
+//        }
 //        if (pkt.data)
 //            av_free_packet(&pkt);
     }
@@ -445,6 +453,12 @@ void FFMpegSimplePlayer::play(const char *filepath) {
                                      NULL, NULL);
 
 
+    au_convert_ctx = swr_alloc();
+    au_convert_ctx = swr_alloc_set_opts(au_convert_ctx, AV_CH_LAYOUT_STEREO, AV_SAMPLE_FMT_FLTP, aCodecCtx->sample_rate,
+                                        av_get_default_channel_layout(aCodecCtx->channels), aCodecCtx->sample_fmt,
+                                        aCodecCtx->sample_rate, 0, NULL);
+    swr_init(au_convert_ctx);
+
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
         printf("Could not initialize SDL - %s\n", SDL_GetError());
         return;
@@ -468,7 +482,8 @@ void FFMpegSimplePlayer::play(const char *filepath) {
     SDL_UnlockAudio();
     SDL_PauseAudio(0);
 
-    int out_buffer_size = av_samples_get_buffer_size(nullptr,aCodecCtx->channels,aCodecCtx->frame_size,AV_SAMPLE_FMT_FLTP,1);
+    int out_buffer_size = av_samples_get_buffer_size(nullptr, aCodecCtx->channels, aCodecCtx->frame_size,
+                                                     AV_SAMPLE_FMT_FLTP, 1);
 
     audioq = (PacketQueue *) malloc(sizeof(PacketQueue));
     packet_queue_init(audioq);
@@ -543,8 +558,9 @@ void FFMpegSimplePlayer::play(const char *filepath) {
                 }
             } else if (packet->stream_index == audioindex) {
                 packet_queue_put(audioq, packet);
+            } else {
+                av_packet_unref(packet);
             }
-
 
         } else if (event.type == SDL_KEYDOWN) {
             //Pause
@@ -555,9 +571,7 @@ void FFMpegSimplePlayer::play(const char *filepath) {
         } else if (event.type == SFM_BREAK_EVENT) {
             break;
         }
-
     }
-    av_packet_unref(packet);
 }
 
 
