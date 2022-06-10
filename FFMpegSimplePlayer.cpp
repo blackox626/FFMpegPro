@@ -130,10 +130,6 @@ SDL_Event event;
 
 struct SwsContext *img_convert_ctx;
 
-SwrContext *au_convert_ctx;
-
-//FILE *audio_pcm;
-
 //初始化队列
 void packet_queue_init(PacketQueue *q) {
     memset(q, 0, sizeof(PacketQueue));
@@ -201,162 +197,56 @@ static int packet_queue_get(PacketQueue *q, AVPacket *pkt, int block) {
 //解码流数据到
 int audio_decode_frame(AVCodecContext *codecCtx, uint8_t *audio_buf, int buf_size) {
     static AVPacket pkt;
-    uint8_t *audio_pkt_data = NULL;
-    int audio_pkt_size = 0;
-    int len1, _data_size;
+    int _data_size;
 
     for (;;) {
         if (packet_queue_get(audioq, &pkt, 1) < 0) //没有数据了，暂时认为播放完成了
         {
             return -1;
         }
-//        audio_pkt_data = pkt.data;
-        audio_pkt_size = pkt.size;
+        int audio_pkt_size = pkt.size;
         std::cout << "audio_pkt_size：" << audio_pkt_size << std::endl;
-//        while (audio_pkt_size > 0) {
-            int ret = avcodec_send_packet(aCodecCtx, &pkt);
 
-            if (ret == AVERROR(EAGAIN)) {
-                std::cout << "发送解码EAGAIN：" << std::endl;
+        int ret = avcodec_send_packet(aCodecCtx, &pkt);
+
+        if (ret == AVERROR(EAGAIN)) {
+            std::cout << "发送解码EAGAIN：" << std::endl;
+        } else if (ret < 0) {
+            char error[1024];
+            av_strerror(ret, error, 1024);
+            std::cout << "发送解码失败：" << error << std::endl;
+            return _data_size;
+        }
+        while (true) {
+            ret = avcodec_receive_frame(aCodecCtx, aFrame);
+            if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
+                break;
             } else if (ret < 0) {
-                char error[1024];
-                av_strerror(ret, error, 1024);
-                std::cout << "发送解码失败：" << error << std::endl;
+                std::cout << "音频解码失败：" << std::endl;
                 return _data_size;
             }
-            while (true) {
-                ret = avcodec_receive_frame(aCodecCtx, aFrame);
-                if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
-                    break;
-                } else if (ret < 0) {
-                    std::cout << "音频解码失败：" << std::endl;
-                    return _data_size;
-                }
-                // 每个采样数据量的大小
-                int data_size = av_get_bytes_per_sample(aCodecCtx->sample_fmt);
-//                std::cout << "bytes_per_sample:" << data_size << std::endl;
-//
-//                // 每帧采样数
-//                int nb_samples = aFrame->nb_samples;
-//                std::cout << "nb_samples:" << nb_samples << std::endl;
-                /**
-                 * P表示Planar（平面），其数据格式排列方式为 :
-                   LLLLLLRRRRRRLLLLLLRRRRRRLLLLLLRRRRRRL...（每个LLLLLLRRRRRR为一个音频帧）
-                   而不带P的数据格式（即交错排列）排列方式为：
-                   LRLRLRLRLRLRLRLRLRLRLRLRLRLRLRLRLRLRL...（每个LR为一个音频样本）
-                   播放范例：   ffplay -ar 44100 -ac 2 -f f32le pcm文件路径
-                   并不是每一种都是这样的格式
-                 */
+            // 每个采样数据量的大小
+            int data_size = av_get_bytes_per_sample(aCodecCtx->sample_fmt);
 
-                /**
-                 * ffplay -ar 44100 -ac 2 -f f32le -i pcm文件路径
-                    -ar 表示采样率
-                    -ac 表示音频通道数
-                    -f 表示 pcm 格式，sample_fmts + le(小端)或者 be(大端)
-                    sample_fmts可以通过ffplay -sample_fmts来查询
-                    -i 表示输入文件，这里就是 pcm 文件
-                 *
-                 */
-
-                /**
-                 * 大端模式，是指数据的高字节保存在内存的低地址中，而数据的低字节保存在内存的高地址中
-                 * 小端模式，是指数据的高字节保存在内存的高地址中，而数据的低字节保存在内存的低地址中
-                 */
-
-                /**
-                 * 需要注意的一点是planar仅仅是FFmpeg内部使用的储存模式，我们实际中所使用的音频都是packed模式的，
-                 * 也就是说我们使用FFmpeg解码出音频PCM数据后，如果需要写入到输出文件，应该将其转为packed模式的输出。
-                 */
-//                const char *fmt_name = av_get_sample_fmt_name(aCodecCtx->sample_fmt);
-//                AVSampleFormat pack_fmt = av_get_packed_sample_fmt(aCodecCtx->sample_fmt);
-//                std::cout << "fmt_name:" << fmt_name << std::endl;
-//                std::cout << "pack_fmt:" << pack_fmt << std::endl;
-//                std::cout << "frame->format:" << aFrame->format << std::endl;
-
-//                float *sample_buffer = (float *) malloc(aFrame->nb_samples * 2 * 4);
-//                memset(sample_buffer, 0, aFrame->nb_samples * 2 * 4);
-
-                if (av_sample_fmt_is_planar(aCodecCtx->sample_fmt)) {
-                    std::cout << "pcm planar模式" << std::endl;
-                    for (int i = 0; i < aFrame->nb_samples; i++) {
-                        for (int ch = 0; ch < aCodecCtx->channels; ch++) {
-                            // 需要储存为pack模式
+            if (av_sample_fmt_is_planar(aCodecCtx->sample_fmt)) {
+                std::cout << "pcm planar模式" << std::endl;
+                for (int i = 0; i < aFrame->nb_samples; i++) {
+                    for (int ch = 0; ch < aCodecCtx->channels; ch++) {
+                        // 需要储存为pack模式
 //                            fwrite(aFrame->data[ch] + data_size * i, 1, data_size, audio_pcm);
-
-                            memcpy(audio_buf, aFrame->data[ch] + data_size * i, data_size);
-                            audio_buf += data_size;
-                        }
+                        memcpy(audio_buf, aFrame->data[ch] + data_size * i, data_size);
+                        audio_buf += data_size;
                     }
-                } else {
-                    std::cout << "pcm Pack模式" << std::endl;
-//                    fwrite(frame->data[0], 1, frame->linesize[0], audio_pcm);
                 }
-
-//                auto *_out_buffer = (uint8_t *) av_malloc(AVCODEC_MAX_AUDIO_FRAME_SIZE * 2);
-//
-//                swr_convert(au_convert_ctx, &_out_buffer, AVCODEC_MAX_AUDIO_FRAME_SIZE,
-//                            const_cast<const uint8_t **>(aFrame->data), aFrame->nb_samples);
-//
-//                memcpy(audio_buf, _out_buffer, aFrame->nb_samples * 2 * 4);
-                _data_size = aFrame->nb_samples * 2 * 4;
-//                audio_buf -= _data_size;
-//                fwrite(audio_buf, 1, _data_size, audio_pcm);
-
-                return _data_size;
+            } else {
+                std::cout << "pcm Pack模式" << std::endl;
+//                    fwrite(frame->data[0], 1, frame->linesize[0], audio_pcm);
+                memcpy(audio_buf, aFrame->data[0], aFrame->linesize[0]);
             }
+            _data_size = aFrame->nb_samples * 2 * 4;
 
-//            int got_picture;
-//
-//            int ret = avcodec_decode_audio4(aCodecCtx, audioFrame, &got_picture, &pkt);
-//            if (ret < 0) {
-//                printf("Error in decoding audio frame.\n");
-//                exit(0);
-//            }
-//
-//            if (got_picture) {
-//                int in_samples = audioFrame->nb_samples;
-//                short *sample_buffer = (short *) malloc(audioFrame->nb_samples * 2 * 2);
-//                memset(sample_buffer, 0, audioFrame->nb_samples * 4);
-//
-//                int i = 0;
-//                float *inputChannel0 = (float *) (audioFrame->extended_data[0]);
-//
-//                // Mono  单声道
-//                if (audioFrame->channels == 1) {
-//                    for (i = 0; i < in_samples; i++) {
-//                        float sample = *inputChannel0++;
-//                        if (sample < -1.0f) {
-//                            sample = -1.0f;
-//                        } else if (sample > 1.0f) {
-//                            sample = 1.0f;
-//                        }
-//
-//                        sample_buffer[i] = (int16_t) (sample * 32767.0f);
-//                    }
-//                } else { // Stereo  双声道
-//                    float *inputChannel1 = (float *) (audioFrame->extended_data[1]);
-//                    for (i = 0; i < in_samples; i++) {
-//                        sample_buffer[i * 2] = (int16_t) ((*inputChannel0++) * 32767.0f);
-//                        sample_buffer[i * 2 + 1] = (int16_t) ((*inputChannel1++) * 32767.0f);
-//                    }
-//                }
-////                fwrite(sample_buffer, 2, in_samples*2, pcmOutFp);
-//                memcpy(audio_buf, sample_buffer, in_samples * 4);
-//                free(sample_buffer);
-//            }
-//
-//            audio_pkt_size -= ret;
-//
-//            if (audioFrame->nb_samples <= 0) {
-//                continue;
-//            }
-//
-//            data_size = audioFrame->nb_samples * 4;
-
-
-//        }
-//        if (pkt.data)
-//            av_free_packet(&pkt);
+            return _data_size;
+        }
     }
 }
 
@@ -374,13 +264,6 @@ FFMpegSimplePlayer::~FFMpegSimplePlayer() {
 
 void FFMpegSimplePlayer::play(const char *filepath) {
 
-//    audio_pcm = fopen("/Users/blackox626/CLionProjects/FFMpegPro/resource/audio2.pcm", "wb");
-
-    //char filepath[]="bigbuckbunny_480x272.h265";
-//        char filepath[]="Titanic.ts";
-
-//        av_register_all();
-//        avformat_network_init();
     pFormatCtx = avformat_alloc_context();
 
     if (avformat_open_input(&pFormatCtx, filepath, NULL, NULL) != 0) {
@@ -405,7 +288,6 @@ void FFMpegSimplePlayer::play(const char *filepath) {
         printf("Didn't find a video / audio stream.\n");
         return;
     }
-//        pCodecCtx = pFormatCtx->streams[videoindex]->codec;
 
     pCodec = avcodec_find_decoder(pFormatCtx->streams[videoindex]->codecpar->codec_id);
     pCodecCtx = avcodec_alloc_context3(pCodec);
@@ -453,12 +335,6 @@ void FFMpegSimplePlayer::play(const char *filepath) {
                                      NULL, NULL);
 
 
-    au_convert_ctx = swr_alloc();
-    au_convert_ctx = swr_alloc_set_opts(au_convert_ctx, AV_CH_LAYOUT_STEREO, AV_SAMPLE_FMT_FLTP, aCodecCtx->sample_rate,
-                                        av_get_default_channel_layout(aCodecCtx->channels), aCodecCtx->sample_fmt,
-                                        aCodecCtx->sample_rate, 0, NULL);
-    swr_init(au_convert_ctx);
-
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
         printf("Could not initialize SDL - %s\n", SDL_GetError());
         return;
@@ -482,12 +358,10 @@ void FFMpegSimplePlayer::play(const char *filepath) {
     SDL_UnlockAudio();
     SDL_PauseAudio(0);
 
-    int out_buffer_size = av_samples_get_buffer_size(nullptr, aCodecCtx->channels, aCodecCtx->frame_size,
-                                                     AV_SAMPLE_FMT_FLTP, 1);
+//    int out_buffer_size = av_samples_get_buffer_size(nullptr, aCodecCtx->channels, aCodecCtx->frame_size,AV_SAMPLE_FMT_FLTP, 1);
 
     audioq = (PacketQueue *) malloc(sizeof(PacketQueue));
     packet_queue_init(audioq);
-
 
     //SDL 2.0 Support for multiple windows
     screen_w = pCodecCtx->width;
@@ -510,7 +384,6 @@ void FFMpegSimplePlayer::play(const char *filepath) {
     sdlRect.w = screen_w;
     sdlRect.h = screen_h;
 
-//    packet = (AVPacket *) av_malloc(sizeof(AVPacket));
     packet = av_packet_alloc();
 
     video_tid = SDL_CreateThread(sfp_refresh_thread, "video thread", NULL);
@@ -529,7 +402,6 @@ void FFMpegSimplePlayer::play(const char *filepath) {
                 if (packet->stream_index == videoindex || packet->stream_index == audioindex)
                     break;
             }
-//                ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture, packet);
 
             if (packet->stream_index == videoindex) {
                 ret = avcodec_send_packet(pCodecCtx, packet);
