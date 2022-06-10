@@ -51,7 +51,7 @@ int sfp_refresh_thread(void *opaque) {
             event.type = SFM_REFRESH_EVENT;
             SDL_PushEvent(&event);
         }
-        SDL_Delay(40);
+        SDL_Delay(10);
     }
     thread_exit = 0;
     thread_pause = 0;
@@ -513,7 +513,7 @@ void FFMpegSimplePlayer::play(const char *filepath) {
 //    packet = (AVPacket *) av_malloc(sizeof(AVPacket));
     packet = av_packet_alloc();
 
-    video_tid = SDL_CreateThread(sfp_refresh_thread, NULL, NULL);
+    video_tid = SDL_CreateThread(sfp_refresh_thread, "video thread", NULL);
     //------------SDL End------------
 
     //Event Loop
