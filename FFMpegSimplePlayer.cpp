@@ -14,8 +14,7 @@ extern "C" {
 #include <libavutil/opt.h>
 #include <libavutil/channel_layout.h>
 #include <libswscale/swscale.h>
-#include "libavutil/imgutils.h"
-
+#include <libavutil/imgutils.h>
 #include <SDL2/SDL.h>
 }
 
