@@ -403,6 +403,11 @@ void FFMpegSimplePlayer::play(const char *filepath) {
             }
 
             if (packet->stream_index == videoindex) {
+
+                // 时间基转换
+                AVRational raw_video_time_base = av_inv_q(pCodecCtx->framerate);
+                av_packet_rescale_ts(packet, pFormatCtx->streams[videoindex]->time_base, raw_video_time_base);
+
                 ret = avcodec_send_packet(pCodecCtx, packet);
                 if (ret < 0) {
                     std::cout << "视频发送解码失败:" << av_err2str(ret) << std::endl;
@@ -416,6 +421,13 @@ void FFMpegSimplePlayer::play(const char *filepath) {
                         std::cout << "视频解码失败：" << std::endl;
                         return;
                     } else {
+                        int64_t pts = av_rescale_q(pFrame->pts, raw_video_time_base,AV_TIME_BASE_Q);
+
+//                      the same
+//                        int64_t pts = av_rescale_q(pFrame->pts, pFormatCtx->streams[videoindex]->time_base,AV_TIME_BASE_Q);
+
+                        std::cout << "pFrame pts：" << pts << std::endl;
+
                         sws_scale(img_convert_ctx, (const unsigned char *const *) pFrame->data, pFrame->linesize, 0,
                                   pCodecCtx->height, pFrameYUV->data, pFrameYUV->linesize);
                         //SDL---------------------------
