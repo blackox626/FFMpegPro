@@ -61,6 +61,8 @@ void MediaDeMuxerCore::de_muxer_video(std::string media_path, std::string out_vi
                 break;
             } else if (video_index == avPacket->stream_index) { // 只需要视频的
                 std::cout << "写入视频size:" << avPacket->size << std::endl;
+                // https://blog.csdn.net/leixiaohua1020/article/details/11800877
+
                 // 这里需要注意一下，一般的mp4读出来的的packet是不带start code的，需要手动加上，如果是ts的话则是带上了start code的
                 // 初始化过滤器，如果本身就是带了start code的调这个也没事，不会重复添加
                 init_h264_mp4toannexb(video_stream->codecpar);
