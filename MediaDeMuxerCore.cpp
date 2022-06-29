@@ -65,6 +65,15 @@ void MediaDeMuxerCore::de_muxer_video(std::string media_path, std::string out_vi
                 // 初始化过滤器，如果本身就是带了start code的调这个也没事，不会重复添加
                 init_h264_mp4toannexb(video_stream->codecpar);
 
+                if (avPacket->data) {
+                    uint8_t cNalu = avPacket->data[4];
+                    uint8_t type = (cNalu & 0x1f);
+
+                    printf("%s -- %d count : mp4: %d %d %d %d %d type : %d\n", __func__, __LINE__, avPacket->data[0],
+                           avPacket->data[1],
+                           avPacket->data[2], avPacket->data[3], avPacket->data[4], type);
+                }
+
                 if (av_bsf_send_packet(bsf_ctx, avPacket) != 0) {
                     av_packet_unref(avPacket);   // 减少引用计数
                     continue;       // 需要更多的包
@@ -73,6 +82,17 @@ void MediaDeMuxerCore::de_muxer_video(std::string media_path, std::string out_vi
                 while (av_bsf_receive_packet(bsf_ctx, avPacket) == 0) {
                     // printf("fwrite size:%d\n", pkt->size);
                     size_t size = fwrite(avPacket->data, 1, avPacket->size, h264_out);
+
+                    if (avPacket->data) {
+                        uint8_t cNalu = avPacket->data[4];
+                        uint8_t type = (cNalu & 0x1f);
+
+                        printf("%s -- %d count : annexb: %d %d %d %d %d type : %d\n", __func__, __LINE__, avPacket->data[0],
+                               avPacket->data[1],
+                               avPacket->data[2], avPacket->data[3], avPacket->data[4], type);
+                    }
+
+                    printf("fwrite size:%zu \n", size);
                     av_packet_unref(avPacket); //减少引用计数
                 }
             } else {

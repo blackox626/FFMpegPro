@@ -29,10 +29,10 @@ int main() {
 
     std::string media_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/media.mp4";
 
-//    MediaDeMuxerCore *deMuxerCore = new MediaDeMuxerCore();
+    MediaDeMuxerCore *deMuxerCore = new MediaDeMuxerCore();
 
-//    std::string out_video_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/video.h264";
-//    deMuxerCore->de_muxer_video(media_path,out_video_path);
+    std::string out_video_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/video.h264";
+    deMuxerCore->de_muxer_video(media_path,out_video_path);
 //
 //    std::string out_audio_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/audio.aac";
 //    deMuxerCore->de_muxer_audio(media_path,out_audio_path);
@@ -57,8 +57,8 @@ int main() {
 //    const char *aac_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/01.aac";
 //    mp3ToAac.mp3_to_aac(mp3_path,aac_path);
 
-    FFMpegSimplePlayer ffmpegPlayer ;
-    ffmpegPlayer.play("/Users/blackox626/CLionProjects/FFMpegPro/resource/media.mp4");
+//    FFMpegSimplePlayer ffmpegPlayer ;
+//    ffmpegPlayer.play("/Users/blackox626/CLionProjects/FFMpegPro/resource/media.mp4");
 
     return 0;
 }
