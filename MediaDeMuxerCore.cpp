@@ -71,10 +71,28 @@ void MediaDeMuxerCore::de_muxer_video(std::string media_path, std::string out_vi
                     uint8_t cNalu = avPacket->data[4];
                     uint8_t type = (cNalu & 0x1f);
 
-                    printf("%s -- %d count : mp4: %d %d %d %d %d type : %d\n", __func__, __LINE__, avPacket->data[0],
+                    int naluSize = 0;
+
+                    /* 前四个字节表示当前NALU的大小 */
+                    for (int i = 0; i < 4; i++) {
+                        naluSize <<= 8;
+                        naluSize |= avPacket->data[i];
+                    }
+
+                    printf("%s -- %d count : mp4: %d %d %d %d %d type : %d size: %d\n", __func__, __LINE__,
+                           avPacket->data[0],
                            avPacket->data[1],
-                           avPacket->data[2], avPacket->data[3], avPacket->data[4], type);
+                           avPacket->data[2],
+                           avPacket->data[3],
+                           avPacket->data[4],
+                           type,
+                           naluSize);
                 }
+
+                /// nalusize 跟 avPacket->size  有什么关系呢？   nalusize  比  avPacket->size 小很多
+                /// avPacket data 是 h264 编码后的数据
+                /// nalu （nal + vcl） naluheader +  RBSP（Raw Byte Sequence Playload  || Extent Byte Sequence Payload）
+                /// nalu size 为什么还小很多呢??? （一个 packet 对应多个 nalu吗 ）
 
                 if (av_bsf_send_packet(bsf_ctx, avPacket) != 0) {
                     av_packet_unref(avPacket);   // 减少引用计数
@@ -91,7 +109,10 @@ void MediaDeMuxerCore::de_muxer_video(std::string media_path, std::string out_vi
 
                         printf("%s -- %d count : annexb: %d %d %d %d %d type : %d\n", __func__, __LINE__, avPacket->data[0],
                                avPacket->data[1],
-                               avPacket->data[2], avPacket->data[3], avPacket->data[4], type);
+                               avPacket->data[2],
+                               avPacket->data[3],
+                               avPacket->data[4],
+                               type);
                     }
 
                     printf("fwrite size:%zu \n", size);
