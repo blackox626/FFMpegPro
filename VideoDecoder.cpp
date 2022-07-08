@@ -39,6 +39,9 @@ void VideoDecoder::decode_video(std::string media_path, std::string yuv_path) {
         std::cout << "解码器打开失败" << std::endl;
     }
 
+    /// GOP 12 是什么情况？
+    printf("%s -- %d GOP : %d\n", __FUNCTION__, __LINE__, avCodecContext->gop_size);
+
     FILE *yuv_file = fopen(yuv_path.c_str(), "wb");
 
     AVPacket *avPacket = av_packet_alloc();
@@ -49,6 +52,42 @@ void VideoDecoder::decode_video(std::string media_path, std::string yuv_path) {
             std::cout << "文件读取完毕" << std::endl;
             break;
         } else if (video_index == avPacket->stream_index) {
+
+            if (avPacket->data) {
+                uint8_t cNalu = avPacket->data[4];
+                uint8_t type = (cNalu & 0x1f);
+
+                int naluSize = 0;
+
+                /* 前四个字节表示当前NALU的大小 */
+                for (int i = 0; i < 4; i++) {
+                    naluSize <<= 8;
+                    naluSize |= avPacket->data[i];
+                }
+
+                printf("%s -- %d count : mp4: %d %d %d %d %d type : %d size: %d\n", __func__, __LINE__,
+                       avPacket->data[0],
+                       avPacket->data[1],
+                       avPacket->data[2],
+                       avPacket->data[3],
+                       avPacket->data[4],
+                       type,
+                       naluSize);
+
+                //uint8_t startCode[4] = {0x00, 0x00, 0x00, 0x01};
+                int nalLength = 0;
+                uint8_t *data = avPacket->data;
+                // _avPacket->data中可能有多个NALU，循环处理
+                while (data < avPacket->data + avPacket->size) {
+                    // 取前4字节作为nal的长度
+                    nalLength = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+                    if (nalLength > 0) {
+                        printf("%s -- %d  nalu size: %d\n", __func__, __LINE__, nalLength);
+                    }
+                    data = data + 4 + nalLength; // 处理data中下一个NALU数据
+                }
+            }
+
             ret = avcodec_send_packet(avCodecContext, avPacket);
             if (ret < 0) {
                 std::cout << "视频发送解码失败:" << av_err2str(ret) << std::endl;
@@ -62,13 +101,13 @@ void VideoDecoder::decode_video(std::string media_path, std::string yuv_path) {
                     std::cout << "视频解码失败：" << std::endl;
                     return;
                 } else {
-                    std::cout << "写入YUV文件avFrame->linesize[0]：" << avFrame->linesize[0] << "avFrame->width:"
+                    std::cout << "写入YUV文件avFrame->linesize[0]：" << avFrame->linesize[0] << " avFrame->width:"
                               << avFrame->width << std::endl;
 
-                    std::cout << "写入YUV文件avFrame->linesize[1]：" << avFrame->linesize[1] << "avFrame->width:"
+                    std::cout << "写入YUV文件avFrame->linesize[1]：" << avFrame->linesize[1] << " avFrame->width:"
                               << avFrame->width << std::endl;
 
-                    std::cout << "写入YUV文件avFrame->linesize[2]：" << avFrame->linesize[2] << "avFrame->width:"
+                    std::cout << "写入YUV文件avFrame->linesize[2]：" << avFrame->linesize[2] << " avFrame->width:"
                               << avFrame->width << std::endl;
 
                     std::cout << "avFrame->format：" << avFrame->format << std::endl;

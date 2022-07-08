@@ -54,6 +54,14 @@ void MediaDeMuxerCore::de_muxer_video(std::string media_path, std::string out_vi
         AVStream *video_stream = avFormatContext->streams[video_index];
         avPacket = av_packet_alloc();
         av_init_packet(avPacket);
+
+        const AVCodec *avCodec = avcodec_find_decoder(avFormatContext->streams[video_index]->codecpar->codec_id);
+        AVCodecContext *avCodecContext = avcodec_alloc_context3(avCodec);
+        avcodec_parameters_to_context(avCodecContext, avFormatContext->streams[video_index]->codecpar);
+        int ret = avcodec_open2(avCodecContext, avCodec, nullptr);
+
+        printf("%s -- %d GOP : %d\n", __FUNCTION__, __LINE__, avCodecContext->gop_size);
+
         while (true) {
             int rect = av_read_frame(avFormatContext, avPacket);
             if (rect < 0) {
@@ -87,12 +95,34 @@ void MediaDeMuxerCore::de_muxer_video(std::string media_path, std::string out_vi
                            avPacket->data[4],
                            type,
                            naluSize);
-                }
 
-                /// nalusize 跟 avPacket->size  有什么关系呢？   nalusize  比  avPacket->size 小很多
-                /// avPacket data 是 h264 编码后的数据
-                /// nalu （nal + vcl） naluheader +  RBSP（Raw Byte Sequence Playload  || Extent Byte Sequence Payload）
-                /// nalu size 为什么还小很多呢??? （一个 packet 对应多个 nalu吗 ）
+                    /// nalusize 跟 avPacket->size  有什么关系呢？   nalusize  比  avPacket->size 小很多
+                    /// avPacket data 是 h264 编码后的数据
+                    /// nalu （nal + vcl） naluheader +  RBSP（Raw Byte Sequence Playload  || Extent Byte Sequence Payload）
+                    /// nalu size 为什么还小很多呢??? （一个 packet 对应多个 nalu吗 ）
+
+                    /// 一个NALU即使是VCL NALU 也并不一定表示一个视频帧。因为一个帧的数据可能比较多，可以分片为多个NALU来储存。一个或者多个NALU组成一个访问单元AU，一个AU包含一个完整的帧。
+                    /// https://mp.weixin.qq.com/s?__biz=MzA4MjU1MDk3Ng==&mid=2451532398&idx=1&sn=bcb6d53346908e46be44a2eb49e5a3e1&chksm=886fc3c1bf184ad7d6f32b5f70a36b78f4610bd6ae319fa5107d238a32807a627222e08dd1ed&scene=178&cur_album_id=2385206392434556931#rd
+
+                    //uint8_t startCode[4] = {0x00, 0x00, 0x00, 0x01};
+                    int nalLength = 0;
+                    uint8_t *data = avPacket->data;
+                    // _avPacket->data中可能有多个NALU，循环处理
+                    while (data < avPacket->data + avPacket->size) {
+                        // 取前4字节作为nal的长度
+                        nalLength = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+                        if (nalLength > 0) {
+//                            memcpy(data, startCode, 4);  // 拼起始码
+//                            tmpPacket = *_avPacket;      // 仅为了复制packet的其他信息，保存文件可忽略
+//                            tmpPacket.data = data;   // 把tmpPkt指针偏移到实际数据位置
+//                            tmpPacket.size = nalLength + 4; // 长度为nal长度+起始码4
+
+                            // 处理这个NALU的数据，可以直接把tmpPacket.data写入文件
+                            printf("%s -- %d  nalu size: %d\n", __func__, __LINE__, nalLength);
+                        }
+                        data = data + 4 + nalLength; // 处理data中下一个NALU数据
+                    }
+                }
 
                 if (av_bsf_send_packet(bsf_ctx, avPacket) != 0) {
                     av_packet_unref(avPacket);   // 减少引用计数
@@ -107,7 +137,8 @@ void MediaDeMuxerCore::de_muxer_video(std::string media_path, std::string out_vi
                         uint8_t cNalu = avPacket->data[4];
                         uint8_t type = (cNalu & 0x1f);
 
-                        printf("%s -- %d count : annexb: %d %d %d %d %d type : %d\n", __func__, __LINE__, avPacket->data[0],
+                        printf("%s -- %d count : annexb: %d %d %d %d %d type : %d\n", __func__, __LINE__,
+                               avPacket->data[0],
                                avPacket->data[1],
                                avPacket->data[2],
                                avPacket->data[3],

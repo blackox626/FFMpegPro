@@ -29,17 +29,17 @@ int main() {
 
     std::string media_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/media.mp4";
 
-    MediaDeMuxerCore *deMuxerCore = new MediaDeMuxerCore();
-
-    std::string out_video_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/video.h264";
-    deMuxerCore->de_muxer_video(media_path,out_video_path);
+//    MediaDeMuxerCore *deMuxerCore = new MediaDeMuxerCore();
+//
+//    std::string out_video_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/video.h264";
+//    deMuxerCore->de_muxer_video(media_path,out_video_path);
 //
 //    std::string out_audio_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/audio.aac";
 //    deMuxerCore->de_muxer_audio(media_path,out_audio_path);
 
-//    VideoDecoder *videoDecoder = new VideoDecoder();
-//    std::string yuv_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/video.yuv";
-//    videoDecoder->decode_video(media_path, yuv_path);
+    VideoDecoder *videoDecoder = new VideoDecoder();
+    std::string yuv_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/video.yuv";
+    videoDecoder->decode_video(media_path, yuv_path);
 
 //    AudioDecoder *audioDecoder = new AudioDecoder();
 //    std::string pcm_path = "/Users/blackox626/CLionProjects/FFMpegPro/resource/audio.pcm";
