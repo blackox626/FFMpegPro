@@ -39,7 +39,7 @@ void VideoDecoder::decode_video(std::string media_path, std::string yuv_path) {
         std::cout << "解码器打开失败" << std::endl;
     }
 
-    /// GOP 12 是什么情况？
+    /// GOP 12 是什么情况？实际是 25 严重不对啊
     printf("%s -- %d GOP : %d\n", __FUNCTION__, __LINE__, avCodecContext->gop_size);
 
     FILE *yuv_file = fopen(yuv_path.c_str(), "wb");
@@ -101,6 +101,10 @@ void VideoDecoder::decode_video(std::string media_path, std::string yuv_path) {
                     std::cout << "视频解码失败：" << std::endl;
                     return;
                 } else {
+
+                    printf("%s -- %d  avFrame : pkt_pose: %lld pkt_size: %d\n", __func__, __LINE__, avFrame->pkt_pos,
+                           avFrame->pkt_size);
+
                     std::cout << "写入YUV文件avFrame->linesize[0]：" << avFrame->linesize[0] << " avFrame->width:"
                               << avFrame->width << std::endl;
 
