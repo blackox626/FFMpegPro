@@ -113,6 +113,7 @@ private:
             std::cout << "输出流打开失败" << std::endl;
             return;
         }
+        std::cout << "开始写入文件头" << std::endl;
         ret = avformat_write_header(out_format_context, nullptr);
         if (ret < 0) {
             std::cout << "文件头写入失败" << std::endl;
@@ -131,7 +132,7 @@ private:
             }
         }
 
-        std::cout << "开始写入文件头" << std::endl;
+        std::cout << "开始写入文件尾" << std::endl;
         ret = av_write_trailer(out_format_context);
         if (ret < 0) {
             std::cout << "文件尾写入失败" << std::endl;
@@ -171,7 +172,7 @@ private:
             std::unique_lock<std::mutex> uniqueLock(video_mutex);
             video_conditionVariable.wait(uniqueLock);
         }
-        // 大括号括起来可以及时释放锁
+        // 大括号括起来可以及时释放锁 （lock_guard 超出作用域会自动析构，释放锁，unique_lock也是同理）
         if (!video_queue->empty()) {
             // 加锁
             std::lock_guard<std::mutex> lockGuard(video_mutex);
