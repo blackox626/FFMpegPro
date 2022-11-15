@@ -177,6 +177,7 @@ private:
             // 加锁
             std::lock_guard<std::mutex> lockGuard(video_mutex);
             AVPacket *pack = video_queue->at(0);
+            // https://www.cnblogs.com/leisure_chn/p/10584910.html  ffmpeg 时间戳详解
             // 之前在VideoHandle 中转换了统一的pts，现在要转换回去
             av_packet_rescale_ts(pack,AV_TIME_BASE_Q,out_format_context->streams[out_video_stream_index]->time_base);
             video_pts = pack->pts * av_q2d(out_format_context->streams[out_video_stream_index]->time_base);
