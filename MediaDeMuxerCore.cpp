@@ -76,25 +76,25 @@ void MediaDeMuxerCore::de_muxer_video(std::string media_path, std::string out_vi
                 init_h264_mp4toannexb(video_stream->codecpar);
 
                 if (avPacket->data) {
-                    uint8_t cNalu = avPacket->data[4];
-                    uint8_t type = (cNalu & 0x1f);
-
-                    int naluSize = 0;
-
-                    /* 前四个字节表示当前NALU的大小 */
-                    for (int i = 0; i < 4; i++) {
-                        naluSize <<= 8;
-                        naluSize |= avPacket->data[i];
-                    }
-
-                    printf("%s -- %d count : mp4: %d %d %d %d %d type : %d size: %d\n", __func__, __LINE__,
-                           avPacket->data[0],
-                           avPacket->data[1],
-                           avPacket->data[2],
-                           avPacket->data[3],
-                           avPacket->data[4],
-                           type,
-                           naluSize);
+//                    uint8_t cNalu = avPacket->data[4];
+//                    uint8_t type = (cNalu & 0x1f);
+//
+//                    int naluSize = 0;
+//
+//                    /* 前四个字节表示当前NALU的大小 */
+//                    for (int i = 0; i < 4; i++) {
+//                        naluSize <<= 8;
+//                        naluSize |= avPacket->data[i];
+//                    }
+//
+//                    printf("%s -- %d count : mp4: %d %d %d %d %d type : %d size: %d\n", __func__, __LINE__,
+//                           avPacket->data[0],
+//                           avPacket->data[1],
+//                           avPacket->data[2],
+//                           avPacket->data[3],
+//                           avPacket->data[4],
+//                           type,
+//                           naluSize);
 
                     /// nalusize 跟 avPacket->size  有什么关系呢？   nalusize  比  avPacket->size 小很多
                     /// avPacket data 是 h264 编码后的数据
@@ -109,8 +109,23 @@ void MediaDeMuxerCore::de_muxer_video(std::string media_path, std::string out_vi
                     uint8_t *data = avPacket->data;
                     // _avPacket->data中可能有多个NALU，循环处理
                     while (data < avPacket->data + avPacket->size) {
+
                         // 取前4字节作为nal的长度
                         nalLength = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+
+                        uint8_t cNalu = data[4];
+                        uint8_t type = (cNalu & 0x1f);
+
+                        printf("%s -- %d count : mp4: %d %d %d %d %d type : %d size: %d\n", __func__, __LINE__,
+                               data[0],
+                               data[1],
+                               data[2],
+                               data[3],
+                               data[4],
+                               type,
+                               nalLength);
+
+
                         if (nalLength > 0) {
 //                            memcpy(data, startCode, 4);  // 拼起始码
 //                            tmpPacket = *_avPacket;      // 仅为了复制packet的其他信息，保存文件可忽略
@@ -145,6 +160,36 @@ void MediaDeMuxerCore::de_muxer_video(std::string media_path, std::string out_vi
                                avPacket->data[4],
                                type);
                     }
+
+                    int lastIndex = 0;
+
+                    for (int i = 0; i < avPacket->size; i ++) {
+                        if (i >= 3) {
+                            if (avPacket->data[i] == 0x01 && avPacket->data[i - 1] == 0x00 && avPacket->data[i - 2] == 0x00 && avPacket->data[i - 3] == 0x00) {
+                                printf("%s -- %d 444 nalu last len: %d \n", __func__, __LINE__, i-3 - lastIndex);
+                                printf("%s -- %d 444 nalu index: %d\n", __func__, __LINE__, i-3);
+
+                                lastIndex = i;
+
+                                printf("%s -- %d  annexb: type : %d\n", __func__, __LINE__, avPacket->data[i+1] & 0x1f);
+
+                                continue;
+                            }
+                        }
+
+                        if (i >= 2) {
+                            if (avPacket->data[i] == 0x01 && avPacket->data[i - 1] == 0x00 && avPacket->data[i - 2] == 0x00) {
+
+                                printf("%s -- %d 333 nalu last len: %d \n", __func__, __LINE__, i-2 - lastIndex);
+                                printf("%s -- %d 333 nalu index: %d \n", __func__, __LINE__, i-2);
+                                printf("%s -- %d  annexb: type : %d\n", __func__, __LINE__, avPacket->data[i+1] & 0x1f);
+                                lastIndex = i;
+                                continue;
+                            }
+                        }
+                    }
+
+                    printf("%s -- %d  nalu last len: %d \n", __func__, __LINE__, avPacket->size - lastIndex);
 
                     printf("fwrite size:%zu \n", size);
                     av_packet_unref(avPacket); //减少引用计数

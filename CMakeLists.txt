@@ -4,8 +4,8 @@ project(FFMpegPro)
 set(CMAKE_CXX_STANDARD 14)
 
 # FFmpeg的安装目录，可以通过命令"brew info ffmpeg"获取
-set(FFMPEG_DIR /opt/homebrew/Cellar/ffmpeg/5.0.1)
-set(SDL_DIR /opt/homebrew/Cellar/sdl2/2.0.20)
+set(FFMPEG_DIR /opt/homebrew/Cellar/ffmpeg/6.0_1)
+set(SDL_DIR /opt/homebrew/Cellar/sdl2/2.28.5)
 
 aux_source_directory(. DIR_SRCS)
 
